@@ -94,6 +94,7 @@
 
     const activateEvolution = (key) => {
       activeEvolution = key;
+      evolution.classList.add('has-active');
       evolutionTabs.forEach((tab) => {
         const selected = tab.dataset.evolutionTab === key;
         tab.classList.toggle('is-active', selected);
@@ -107,6 +108,7 @@
 
     const clearEvolution = () => {
       activeEvolution = null;
+      evolution.classList.remove('has-active');
       evolutionTabs.forEach((tab) => {
         tab.classList.remove('is-active');
         tab.setAttribute('aria-selected', 'false');
