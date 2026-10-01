@@ -1,33 +1,15 @@
-# RD Design Homepage V19
+# RD Design Homepage V26
 
-Client revision of the RD Design homepage.
+Final refinement based on V25.
 
-## What changed in V19
-Only the “Who We Are / Two identities” section was redesigned according to the client's sketch:
-- default 50/50 split
-- hover/focus expands one chapter
-- opposite chapter compresses to its identity/name
-- mouse leave restores 50/50
-- mobile/tablet keeps both stories fully readable without collapsing
+Only the background around the `Who We Are / tCds / RD Design` split panels was changed to a warm architectural stone/ivory tone. All interactions, responsive behavior and every other section remain unchanged.
 
 ## Run locally
-Open `index.html` with VS Code Live Server.
+Open the folder in VS Code and run `index.html` with Live Server.
 
-## Deploy to Vercel
-- Framework preset: Other
-- Root directory: `./`
-- Build command: blank
-- Output directory: blank
-- Install command: blank
-- Environment variables: none
-
-
-## V20 update
-The Two identities section now uses a stronger desktop 50/50 → 74/26 horizontal hover expansion. The hovered chapter widens and the opposite chapter narrows while keeping the chapter name visible. Mobile/tablet behavior is unchanged.
-
-## V21 fix
-Desktop/laptop split-card hover reliability was corrected for touchscreen Windows laptops. The mobile layout is unchanged.
-
-
-## V22 update
-The desktop/laptop tCds / RD Design split interaction now keeps the inner white detail card fluid with the expanding panel. Mobile/tablet behavior is unchanged.
+## Vercel
+Framework preset: Other
+Root directory: ./
+Build command: blank
+Output directory: blank
+Install command: blank

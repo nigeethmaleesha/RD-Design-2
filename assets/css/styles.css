@@ -2116,3 +2116,203 @@ body.is-ready .hero-load { animation: heroEnter 1s var(--ease) .1s forwards; }
     line-height: 1.66;
   }
 }
+
+/* V24 — interaction stability pass for the split studio story only.
+   Keep the document height and copy measure stable while the two panels animate, so scrolling
+   never jumps and text does not re-wrap frame-by-frame. Mobile/tablet rules remain untouched. */
+@media (min-width: 861px) {
+  .evolution-split.is-height-locked {
+    min-height: 0;
+  }
+
+  .evolution-split.is-height-locked > .chapter-panel,
+  .evolution-split.is-height-locked > .chapter-panel > .chapter-panel__content {
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* The white card can grow with its panel, but its copy keeps the exact measure captured in the
+     default 50/50 state. This removes repeated line-layout recalculation during the width tween. */
+  .chapter-panel__details h4,
+  .chapter-panel__details p,
+  .chapter-panel__details .chapter-panel__meta {
+    width: min(100%, var(--chapter-copy-width, 100%));
+    max-width: var(--chapter-copy-width, 100%);
+    will-change: auto;
+    filter: none;
+    transform: none;
+  }
+
+  .chapter-panel__details h4 {
+    font-size: clamp(24px, 2.15vw, 34px);
+    line-height: 1.07;
+  }
+
+  .chapter-panel__details p {
+    font-size: clamp(12.5px, .95vw, 14px);
+    line-height: 1.62;
+  }
+
+  /* Cancel V23's temporary blur/fade treatment; the copy now stays visually stable from the first
+     animation frame until the pointer actually leaves the split image area. */
+  .evolution-split.is-resizing .chapter-panel__details h4,
+  .evolution-split.is-resizing .chapter-panel__details p,
+  .evolution-split.is-resizing .chapter-panel__details .chapter-panel__meta {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4 {
+    width: min(100%, var(--chapter-copy-width, 100%));
+    max-width: var(--chapter-copy-width, 100%);
+    font-size: clamp(24px, 2.15vw, 34px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    width: min(100%, var(--chapter-copy-width, 100%));
+    max-width: var(--chapter-copy-width, 100%);
+    font-size: clamp(12.5px, .95vw, 14px);
+    line-height: 1.62;
+  }
+
+  .chapter-panel__details {
+    contain: paint;
+  }
+}
+
+
+/* V25 — smooth, section-local split interaction.
+   This overrides only the desktop tCds / RD Design story behaviour. Mobile/tablet remains exactly
+   as before. The section keeps a stable measured height, so text can re-wrap naturally while the
+   panels resize without moving the rest of the page. */
+@media (min-width: 861px) {
+  .evolution-split-stage {
+    contain: layout style;
+  }
+
+  .evolution-split {
+    height: var(--evolution-stable-height, auto);
+    min-height: 650px;
+    align-items: stretch;
+    overflow: hidden;
+    contain: layout style;
+  }
+
+  .evolution-split > .chapter-panel,
+  .evolution-split.has-focus .chapter-panel.is-expanded,
+  .evolution-split.has-focus .chapter-panel.is-collapsed {
+    height: 100%;
+    min-height: 0;
+    transform: none;
+  }
+
+  .chapter-panel {
+    contain: layout paint style;
+    will-change: flex-basis;
+    transition:
+      flex-basis .92s cubic-bezier(.22,.61,.36,1),
+      flex-grow .92s cubic-bezier(.22,.61,.36,1),
+      box-shadow .55s ease;
+  }
+
+  .chapter-panel__content {
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  /* The editorial card follows the changing panel width directly. There is no independent width
+     tween and no fixed copy measure, so headings/paragraphs re-wrap naturally as space changes. */
+  .chapter-panel__details,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    contain: layout paint style;
+    transform: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition:
+      opacity .32s ease,
+      max-height .48s ease,
+      padding .48s ease,
+      margin .48s ease,
+      border-width .3s ease;
+  }
+
+  .chapter-panel__details h4,
+  .chapter-panel__details p,
+  .chapter-panel__details .chapter-panel__meta,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    width: auto;
+    max-width: none;
+    transform: none;
+    filter: none;
+    opacity: 1;
+    will-change: auto;
+  }
+
+  /* Keep typography metrics constant while width changes. Only wrapping changes, which makes the
+     copy feel fluid instead of stuttering from simultaneous font-size/line-height animation. */
+  .chapter-panel__details h4,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4 {
+    font-size: clamp(24px, 2.15vw, 34px);
+    line-height: 1.07;
+    transition: none;
+    text-wrap: balance;
+  }
+
+  .chapter-panel__details p,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    font-size: clamp(12.5px, .95vw, 14px);
+    line-height: 1.62;
+    transition: none;
+    text-wrap: pretty;
+  }
+
+  .chapter-panel__meta {
+    transition: opacity .28s ease;
+  }
+
+  /* Remove the former resize text treatment and height-lock behaviour completely. */
+  .evolution-split.is-resizing .chapter-panel__details h4,
+  .evolution-split.is-resizing .chapter-panel__details p,
+  .evolution-split.is-resizing .chapter-panel__details .chapter-panel__meta,
+  .evolution-split.is-height-locked .chapter-panel__details h4,
+  .evolution-split.is-height-locked .chapter-panel__details p,
+  .evolution-split.is-height-locked .chapter-panel__details .chapter-panel__meta {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  /* Expanding is horizontal only. This keeps the panel inside its own section and prevents the
+     transformed edge from visually jumping beneath the cursor while scrolling. */
+  .evolution-split.has-focus .chapter-panel.is-expanded,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover {
+    transform: none;
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) {
+    filter: none;
+  }
+}
+
+/* V26 — final warm-stone backdrop for the studio story section only.
+   Keeps every layout/interaction unchanged while removing the plain white feel around the panels. */
+.about {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, .34), transparent 34%),
+    radial-gradient(circle at 88% 7%, rgba(207, 107, 62, .085), transparent 30%),
+    linear-gradient(180deg, #eee7df 0%, #f4eee7 50%, #ebe4dc 100%);
+}

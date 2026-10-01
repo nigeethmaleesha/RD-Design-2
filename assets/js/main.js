@@ -67,54 +67,117 @@
     });
   }
 
-  /* Split studio story: default 50/50; desktop/laptop pointer hover expands one chapter and compresses the other.
-     Important: do not disable this just because the device also has a touchscreen. Many Windows laptops
-     report a coarse/touch pointer even while a mouse or trackpad is being used. */
+  /* Split studio story — V25 stable local interaction.
+     The hover state is driven only by real pointer movement inside this section. Scrolling with
+     a stationary pointer does not reset/re-trigger the panels, so the rest of the page never
+     flickers. The section height is measured once in the 50/50 state and held stable while the
+     two panels resize; the white cards and their copy are then free to reflow naturally inside
+     the changing panel width without changing the document height. */
   if (evolutionSplit && chapterPanels.length === 2) {
-    const canSplit = () => window.matchMedia('(min-width: 861px)').matches;
-    let chapterResizeTimer = null;
+    const desktopQuery = window.matchMedia('(min-width: 861px)');
+    const canSplit = () => desktopQuery.matches;
+    const SWITCH_DEADBAND = 34;
+    let activePanel = null;
+    let pointerRaf = 0;
+    let resizeRaf = 0;
+    let latestPointer = { x: -1, y: -1 };
 
-    const markChapterResize = () => {
-      if (prefersReducedMotion || !canSplit()) return;
-      window.clearTimeout(chapterResizeTimer);
-      evolutionSplit.classList.add('is-resizing');
-      chapterResizeTimer = window.setTimeout(() => {
-        evolutionSplit.classList.remove('is-resizing');
-      }, 980);
+    const clearPanelState = () => {
+      activePanel = null;
+      evolutionSplit.classList.remove('has-focus');
+      chapterPanels.forEach((panel) => {
+        panel.classList.remove('is-expanded', 'is-collapsed');
+      });
     };
 
-    const setChapterFocus = (activePanel = null) => {
-      if (!canSplit() || !activePanel) {
-        markChapterResize();
-        evolutionSplit.classList.remove('has-focus');
-        chapterPanels.forEach((panel) => {
-          panel.classList.remove('is-expanded', 'is-collapsed');
-        });
+    const setChapterFocus = (nextPanel = null) => {
+      if (!canSplit()) nextPanel = null;
+      if (nextPanel === activePanel) return;
+
+      activePanel = nextPanel;
+      evolutionSplit.classList.toggle('has-focus', Boolean(activePanel));
+
+      chapterPanels.forEach((panel) => {
+        const isActive = Boolean(activePanel && panel === activePanel);
+        panel.classList.toggle('is-expanded', isActive);
+        panel.classList.toggle('is-collapsed', Boolean(activePanel && panel !== activePanel));
+      });
+    };
+
+    const measureStableHeight = () => {
+      if (!canSplit()) {
+        evolutionSplit.style.removeProperty('--evolution-stable-height');
+        clearPanelState();
         return;
       }
 
-      markChapterResize();
-      evolutionSplit.classList.add('has-focus');
-      chapterPanels.forEach((panel) => {
-        const isActive = panel === activePanel;
-        panel.classList.toggle('is-expanded', isActive);
-        panel.classList.toggle('is-collapsed', !isActive);
+      /* Measure only in the neutral 50/50 state. This is done on load/resize, never during hover. */
+      const previousActive = activePanel;
+      clearPanelState();
+      evolutionSplit.style.removeProperty('--evolution-stable-height');
+
+      requestAnimationFrame(() => {
+        const naturalHeight = Math.ceil(Math.max(
+          650,
+          ...chapterPanels.map((panel) => panel.scrollHeight)
+        ));
+        evolutionSplit.style.setProperty('--evolution-stable-height', `${naturalHeight}px`);
+
+        /* Do not restore an old hover state after a viewport resize. A fresh pointer movement
+           chooses the correct side, avoiding a jump when responsive geometry changes. */
+        if (previousActive && latestPointer.x >= 0) {
+          // Intentionally leave the neutral state until the next genuine pointer movement.
+        }
       });
     };
 
+    const panelForPointer = (clientX) => {
+      const rect = evolutionSplit.getBoundingClientRect();
+      const midpoint = rect.left + rect.width / 2;
+
+      if (!activePanel) {
+        return clientX < midpoint ? chapterPanels[0] : chapterPanels[1];
+      }
+
+      /* Small hysteresis keeps the animated divider from switching under a nearly stationary mouse. */
+      if (activePanel === chapterPanels[0]) {
+        return clientX > midpoint + SWITCH_DEADBAND ? chapterPanels[1] : chapterPanels[0];
+      }
+      return clientX < midpoint - SWITCH_DEADBAND ? chapterPanels[0] : chapterPanels[1];
+    };
+
+    const pointerIsInside = (x, y) => {
+      const rect = evolutionSplit.getBoundingClientRect();
+      return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    };
+
+    const processPointer = () => {
+      pointerRaf = 0;
+      if (!canSplit()) {
+        setChapterFocus();
+        return;
+      }
+
+      const { x, y } = latestPointer;
+      if (!pointerIsInside(x, y)) {
+        setChapterFocus();
+        return;
+      }
+      setChapterFocus(panelForPointer(x));
+    };
+
+    const onPointerMove = (event) => {
+      if ('pointerType' in event && event.pointerType === 'touch') return;
+      latestPointer = { x: event.clientX, y: event.clientY };
+      if (!pointerRaf) pointerRaf = requestAnimationFrame(processPointer);
+    };
+
+    /* Listen for genuine pointer movement, not element mouseleave. During wheel/trackpad scrolling
+       the pointer is stationary, so the active chapter stays visually stable instead of toggling. */
+    const moveEvent = 'PointerEvent' in window ? 'pointermove' : 'mousemove';
+    document.addEventListener(moveEvent, onPointerMove, { passive: true });
+
     chapterPanels.forEach((panel) => {
-      // Pointer events distinguish a real mouse/pen hover from a touch press.
-      panel.addEventListener('pointerenter', (event) => {
-        if (event.pointerType !== 'touch') setChapterFocus(panel);
-      });
-      panel.addEventListener('pointerleave', (event) => {
-        if (event.pointerType !== 'touch') setChapterFocus();
-      });
-
-      // Mouse events are kept as a fallback for browsers/devices with incomplete pointer reporting.
-      panel.addEventListener('mouseenter', () => setChapterFocus(panel));
-      panel.addEventListener('mouseleave', () => setChapterFocus());
-
       panel.addEventListener('focus', () => setChapterFocus(panel));
       panel.addEventListener('blur', () => {
         window.setTimeout(() => {
@@ -123,10 +186,18 @@
       });
     });
 
-    // If the viewport crosses into the mobile layout, clear any desktop expansion state.
-    window.addEventListener('resize', () => {
-      if (!canSplit()) setChapterFocus();
-    });
+    const scheduleMeasure = () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        measureStableHeight();
+      });
+    };
+
+    window.addEventListener('load', scheduleMeasure, { once: true });
+    window.addEventListener('resize', scheduleMeasure);
+    desktopQuery.addEventListener?.('change', scheduleMeasure);
+    scheduleMeasure();
   }
 
   const onScroll = () => {
