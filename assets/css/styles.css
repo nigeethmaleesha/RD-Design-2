@@ -2316,3 +2316,97 @@ body.is-ready .hero-load { animation: heroEnter 1s var(--ease) .1s forwards; }
     radial-gradient(circle at 88% 7%, rgba(207, 107, 62, .085), transparent 30%),
     linear-gradient(180deg, #eee7df 0%, #f4eee7 50%, #ebe4dc 100%);
 }
+
+/* V27 — final text-reflow performance pass for the desktop split story only.
+   Keep the V26 visual design exactly the same, but make copy re-wrap with less main-thread work
+   while the 50/50 → 74/26 panel transition runs. Mobile/tablet rules are untouched. */
+@media (min-width: 861px) {
+  .evolution-split > .chapter-panel {
+    overflow: clip;
+    will-change: flex-basis;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    transition:
+      flex-basis .86s cubic-bezier(.22,.61,.36,1),
+      box-shadow .55s ease,
+      filter .48s ease;
+  }
+
+  .chapter-panel__media,
+  .chapter-panel__media img,
+  .chapter-panel__content,
+  .chapter-panel__details {
+    backface-visibility: hidden;
+  }
+
+  .chapter-panel__details {
+    contain: layout paint style;
+    transform: translateZ(0);
+    /* Width continues to follow the panel exactly as before; only paint-only properties animate. */
+    transition:
+      opacity .24s ease,
+      transform .52s cubic-bezier(.22,.61,.36,1);
+  }
+
+  /* Advanced balanced/pretty wrapping is expensive while the card width changes every frame.
+     Native wrapping preserves the same responsive behaviour but avoids repeated line-balancing
+     passes, which removes the visible hitch as the copy adapts to the expanding panel. */
+  .chapter-panel__details h4,
+  .chapter-panel__details p,
+  .chapter-panel__details .chapter-panel__meta,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    text-wrap: wrap;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    text-rendering: optimizeSpeed;
+  }
+
+  /* The hidden card no longer animates layout-heavy max-height/padding values while its panel
+     collapses. It simply fades/slides away; the visible title behaviour remains unchanged. */
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__details,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__details {
+    transition:
+      opacity .20s ease,
+      transform .42s cubic-bezier(.22,.61,.36,1);
+  }
+}
+
+/* V28 — instant copy-layout switch for the desktop split story only.
+   The panel and white card still resize exactly as before, but the copy no longer recalculates
+   its line breaks on every animation frame. JavaScript gives the visible copy its destination
+   measure at the start of the panel transition, so the wording forms once, instantly, and the
+   expanding card simply reveals it. Mobile/tablet behaviour is intentionally untouched. */
+@media (min-width: 861px) {
+  .evolution-split.is-copy-fixed .chapter-panel__details {
+    overflow: hidden;
+  }
+
+  .evolution-split.is-copy-fixed .chapter-panel__details h4,
+  .evolution-split.is-copy-fixed .chapter-panel__details p,
+  .evolution-split.is-copy-fixed .chapter-panel__details .chapter-panel__meta {
+    width: var(--chapter-instant-copy-width, 100%);
+    max-width: var(--chapter-instant-copy-width, 100%);
+    min-width: var(--chapter-instant-copy-width, 100%);
+    text-wrap: wrap;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    text-rendering: auto;
+    font-kerning: normal;
+    transition: none !important;
+  }
+
+  /* Keep the destination line layout stable throughout the width tween. The containing white
+     card clips anything that has not been revealed yet, instead of forcing a per-frame reflow. */
+  .evolution-split.is-copy-fixed .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split.is-copy-fixed .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split.is-copy-fixed .chapter-panel.is-expanded .chapter-panel__details .chapter-panel__meta {
+    width: var(--chapter-instant-copy-width, 100%);
+    min-width: var(--chapter-instant-copy-width, 100%);
+    max-width: var(--chapter-instant-copy-width, 100%);
+  }
+}

@@ -77,10 +77,47 @@
     const desktopQuery = window.matchMedia('(min-width: 861px)');
     const canSplit = () => desktopQuery.matches;
     const SWITCH_DEADBAND = 34;
+    const PANEL_TRANSITION_MS = 900;
     let activePanel = null;
     let pointerRaf = 0;
     let resizeRaf = 0;
+    let copyReleaseTimer = 0;
     let latestPointer = { x: -1, y: -1 };
+
+    const copyWidthFor = (panel, mode = 'neutral') => {
+      const splitRect = evolutionSplit.getBoundingClientRect();
+      const content = panel.querySelector('.chapter-panel__content');
+      const details = panel.querySelector('.chapter-panel__details');
+      if (!content || !details || splitRect.width <= 0) return null;
+
+      const contentStyle = getComputedStyle(content);
+      const detailsStyle = getComputedStyle(details);
+      const contentPad = parseFloat(contentStyle.paddingLeft || 0) + parseFloat(contentStyle.paddingRight || 0);
+      const detailsPad = parseFloat(detailsStyle.paddingLeft || 0) + parseFloat(detailsStyle.paddingRight || 0);
+      const ratio = mode === 'expanded' ? 0.74 : mode === 'collapsed' ? 0.26 : 0.50;
+      const panelWidth = Math.max(0, splitRect.width * ratio - 5);
+      return Math.max(180, Math.floor(panelWidth - contentPad - detailsPad - 2));
+    };
+
+    const lockCopyToDestination = (nextPanel = null) => {
+      if (!canSplit()) {
+        evolutionSplit.classList.remove('is-copy-fixed');
+        chapterPanels.forEach((panel) => panel.style.removeProperty('--chapter-instant-copy-width'));
+        return;
+      }
+
+      chapterPanels.forEach((panel) => {
+        const mode = nextPanel ? (panel === nextPanel ? 'expanded' : 'collapsed') : 'neutral';
+        const width = copyWidthFor(panel, mode);
+        if (width) panel.style.setProperty('--chapter-instant-copy-width', `${width}px`);
+      });
+      evolutionSplit.classList.add('is-copy-fixed');
+
+      window.clearTimeout(copyReleaseTimer);
+      copyReleaseTimer = window.setTimeout(() => {
+        evolutionSplit.classList.remove('is-copy-fixed');
+      }, PANEL_TRANSITION_MS);
+    };
 
     const clearPanelState = () => {
       activePanel = null;
@@ -93,6 +130,10 @@
     const setChapterFocus = (nextPanel = null) => {
       if (!canSplit()) nextPanel = null;
       if (nextPanel === activePanel) return;
+
+      /* Set the copy to its destination measure before the panel width starts moving. This makes
+         line wrapping switch once, instantly, instead of rebuilding characters on every frame. */
+      lockCopyToDestination(nextPanel);
 
       activePanel = nextPanel;
       evolutionSplit.classList.toggle('has-focus', Boolean(activePanel));
@@ -107,6 +148,8 @@
     const measureStableHeight = () => {
       if (!canSplit()) {
         evolutionSplit.style.removeProperty('--evolution-stable-height');
+        evolutionSplit.classList.remove('is-copy-fixed');
+        chapterPanels.forEach((panel) => panel.style.removeProperty('--chapter-instant-copy-width'));
         clearPanelState();
         return;
       }
