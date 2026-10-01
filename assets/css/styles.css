@@ -1565,3 +1565,554 @@ body.is-ready .hero-load { animation: heroEnter 1s var(--ease) .1s forwards; }
 
 }
 
+
+/* V19 — client-approved split studio story. This replaces only the former two-circle interaction. */
+.evolution-split-stage {
+  padding-top: 54px;
+  padding-bottom: 20px;
+}
+
+.evolution-split {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 650px;
+  perspective: 1200px;
+}
+
+.chapter-panel {
+  position: relative;
+  flex: 1 1 50%;
+  min-width: 0;
+  min-height: 650px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(29, 27, 25, .11);
+  background: #18201e;
+  box-shadow: 0 22px 58px rgba(31, 26, 22, .10);
+  cursor: default;
+  outline: none;
+  transition:
+    flex-grow .86s var(--ease),
+    flex-basis .86s var(--ease),
+    transform .86s var(--ease),
+    box-shadow .72s ease,
+    filter .72s ease;
+}
+
+.chapter-panel__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.chapter-panel__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 15, 14, .18) 0%, rgba(10, 15, 14, .30) 38%, rgba(10, 15, 14, .76) 100%),
+    linear-gradient(90deg, rgba(10, 15, 14, .15), transparent 48%, rgba(10, 15, 14, .10));
+  transition: background .76s ease, opacity .76s ease;
+}
+
+.chapter-panel__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+  filter: saturate(.76) contrast(.96) brightness(.88);
+  transition: transform 1.15s var(--ease), filter .86s ease;
+}
+
+.chapter-panel--tcds .chapter-panel__media img { object-position: 52% center; }
+.chapter-panel--rdd .chapter-panel__media img { object-position: 58% center; }
+
+.chapter-panel__content {
+  position: relative;
+  z-index: 2;
+  min-height: 650px;
+  padding: clamp(28px, 2.7vw, 42px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.chapter-panel__identity {
+  color: #fff;
+  max-width: 520px;
+  transition: transform .72s var(--ease), opacity .52s ease;
+}
+
+.chapter-panel__eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, .72);
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.chapter-panel__identity h3 {
+  margin: 0;
+  font-size: clamp(38px, 4.3vw, 66px);
+  line-height: .94;
+  font-weight: 520;
+  letter-spacing: -.045em;
+  text-shadow: 0 8px 34px rgba(0, 0, 0, .26);
+}
+
+.chapter-panel__identity p {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, .78);
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.chapter-panel__details {
+  width: min(100%, 610px);
+  padding: clamp(26px, 2.2vw, 36px);
+  color: var(--ink);
+  border: 1px solid rgba(29, 27, 25, .09);
+  background: rgba(251, 248, 244, .955);
+  box-shadow: 0 22px 52px rgba(10, 15, 14, .18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transform: translateY(0);
+  transform-origin: bottom left;
+  opacity: 1;
+  transition:
+    opacity .42s ease,
+    transform .72s var(--ease),
+    max-height .72s var(--ease),
+    padding .72s var(--ease),
+    margin .72s var(--ease),
+    border-width .4s ease;
+}
+
+.chapter-panel__details::before {
+  content: "";
+  display: block;
+  width: 52px;
+  height: 2px;
+  margin-bottom: 18px;
+  background: linear-gradient(90deg, var(--accent), #e69a65);
+}
+
+.chapter-panel__details h4 {
+  margin: 0;
+  max-width: 540px;
+  font-size: clamp(24px, 2.15vw, 34px);
+  line-height: 1.07;
+  font-weight: 520;
+  letter-spacing: -.026em;
+}
+
+.chapter-panel__details p {
+  margin: 15px 0 0;
+  color: #625c56;
+  font-size: clamp(12.5px, .95vw, 14px);
+  line-height: 1.62;
+}
+
+.chapter-panel__meta {
+  display: block;
+  margin-top: 19px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(29, 27, 25, .10);
+  color: #7d756e;
+  font-size: 8px;
+  line-height: 1.55;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* Desktop interaction: exact 50/50 default, then a clear horizontal 74/26 expansion on hover/focus. */
+@media (min-width: 861px) {
+  .evolution-split {
+    overflow: visible;
+  }
+
+  .evolution-split > .chapter-panel {
+    flex: 0 0 calc(50% - 5px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded {
+    flex: 0 0 calc(74% - 5px);
+    transform: translateY(-10px);
+    box-shadow: 0 34px 78px rgba(31, 26, 22, .17);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__media img {
+    transform: scale(1.065);
+    filter: saturate(.88) contrast(1) brightness(.92);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__media::after {
+    background:
+      linear-gradient(180deg, rgba(10, 15, 14, .12) 0%, rgba(10, 15, 14, .24) 38%, rgba(10, 15, 14, .70) 100%),
+      linear-gradient(90deg, rgba(10, 15, 14, .10), transparent 56%, rgba(10, 15, 14, .08));
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details {
+    width: min(100%, 700px);
+    transform: translateY(-4px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed {
+    flex: 0 0 calc(26% - 5px);
+    filter: saturate(.78);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__media img {
+    transform: scale(1.085);
+    filter: saturate(.60) contrast(.96) brightness(.70);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__media::after {
+    background:
+      linear-gradient(180deg, rgba(10, 15, 14, .34), rgba(10, 15, 14, .78)),
+      linear-gradient(90deg, rgba(10, 15, 14, .12), transparent 56%, rgba(10, 15, 14, .16));
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__content {
+    justify-content: center;
+    align-items: center;
+    padding-left: clamp(18px, 2vw, 30px);
+    padding-right: clamp(18px, 2vw, 30px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity {
+    width: 100%;
+    max-width: none;
+    text-align: center;
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity h3 {
+    display: block;
+    width: 100%;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(28px, 2.45vw, 40px);
+    line-height: 1;
+    letter-spacing: -.04em;
+    opacity: 1;
+    visibility: visible;
+    white-space: nowrap;
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__eyebrow,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity p {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__details {
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(26px) scale(.96);
+    pointer-events: none;
+  }
+
+  .chapter-panel:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 107, 62, .25), 0 34px 78px rgba(31, 26, 22, .17);
+  }
+}
+
+/* V21 reliability fallback: if JS hover-state detection is unavailable, modern desktop browsers
+   still get the same 74/26 split through native CSS hover. This never applies to mobile. */
+@media (min-width: 861px) and (hover: hover) {
+  .evolution-split:not(.has-focus):hover > .chapter-panel {
+    flex: 0 0 calc(26% - 5px);
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover {
+    flex: 0 0 calc(74% - 5px);
+    transform: translateY(-10px);
+    box-shadow: 0 34px 78px rgba(31, 26, 22, .17);
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) {
+    filter: saturate(.78);
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__media img {
+    transform: scale(1.085);
+    filter: saturate(.60) contrast(.96) brightness(.70);
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__content {
+    justify-content: center;
+    align-items: center;
+    padding-left: clamp(18px, 2vw, 30px);
+    padding-right: clamp(18px, 2vw, 30px);
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__identity {
+    width: 100%;
+    max-width: none;
+    text-align: center;
+    transform: none;
+    opacity: 1;
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__identity h3 {
+    display: block;
+    width: 100%;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(28px, 2.45vw, 40px);
+    line-height: 1;
+    letter-spacing: -.04em;
+    opacity: 1;
+    visibility: visible;
+    white-space: nowrap;
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__eyebrow,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__identity p {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .evolution-split:not(.has-focus):hover > .chapter-panel:not(:hover) .chapter-panel__details {
+    max-height: 0;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(26px) scale(.96);
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 861px) {
+  .evolution-split { min-height: 700px; }
+  .chapter-panel,
+  .chapter-panel__content { min-height: 700px; }
+  .chapter-panel__content { padding: 28px; }
+  .chapter-panel__details { padding: 27px; }
+  .chapter-panel__details h4 { font-size: clamp(22px, 2.2vw, 29px); }
+  .chapter-panel__details p { font-size: 12.5px; }
+}
+
+/* Mobile/tablet: keep both stories fully readable; no collapsing interaction. */
+@media (max-width: 860px) {
+  .evolution-split-stage { padding-top: 42px; padding-bottom: 0; }
+  .evolution-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    min-height: 0;
+  }
+  .chapter-panel,
+  .evolution-split.has-focus .chapter-panel.is-expanded,
+  .evolution-split.has-focus .chapter-panel.is-collapsed {
+    min-height: 0;
+    transform: none;
+    filter: none;
+    box-shadow: 0 18px 48px rgba(31, 26, 22, .10);
+  }
+  .chapter-panel__media {
+    position: relative;
+    height: clamp(210px, 54vw, 330px);
+  }
+  .chapter-panel__media::after {
+    background: linear-gradient(180deg, rgba(10,15,14,.12), rgba(10,15,14,.54));
+  }
+  .chapter-panel__media img,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__media img,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__media img {
+    transform: scale(1.02);
+    filter: saturate(.78) contrast(.97) brightness(.88);
+  }
+  .chapter-panel__content,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__content {
+    min-height: 0;
+    padding: 26px 24px 28px;
+    display: block;
+    color: var(--ink);
+    background: rgba(251, 248, 244, .98);
+  }
+  .chapter-panel__identity,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity {
+    color: var(--ink);
+    max-width: none;
+    text-align: left;
+    transform: none;
+  }
+  .chapter-panel__eyebrow,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__eyebrow {
+    display: block;
+    height: auto;
+    margin: 0 0 8px;
+    overflow: visible;
+    color: var(--accent-dark);
+    opacity: 1;
+  }
+  .chapter-panel__identity h3,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity h3 {
+    font-size: clamp(34px, 10vw, 48px);
+    color: var(--ink);
+    text-shadow: none;
+  }
+  .chapter-panel__identity p,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__identity p {
+    height: auto;
+    margin: 8px 0 0;
+    overflow: visible;
+    color: var(--muted);
+    opacity: 1;
+  }
+  .chapter-panel__details,
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details,
+  .evolution-split.has-focus .chapter-panel.is-collapsed .chapter-panel__details {
+    width: 100%;
+    max-height: none;
+    margin: 24px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    opacity: 1;
+    overflow: visible;
+    transform: none;
+    pointer-events: auto;
+  }
+  .chapter-panel__details::before { margin-bottom: 16px; }
+  .chapter-panel__details h4 { font-size: clamp(24px, 7.5vw, 32px); }
+  .chapter-panel__details p { font-size: 13px; line-height: 1.65; }
+  .chapter-panel__meta { font-size: 7.5px; }
+}
+
+@media (max-width: 620px) {
+  .evolution-split-stage { padding-top: 34px; }
+  .evolution-split { gap: 20px; }
+  .chapter-panel__media { height: 230px; }
+  .chapter-panel__content { padding: 24px 20px 25px; }
+  .chapter-panel__details { margin-top: 22px; }
+}
+
+/* V22 — keep the inner editorial card fluid with the desktop split-panel expansion.
+   Mobile/tablet rules remain unchanged because this only applies above 860px. */
+@media (min-width: 861px) {
+  .chapter-panel__details {
+    width: 100%;
+    max-width: none;
+    align-self: stretch;
+    transition:
+      width .86s var(--ease),
+      opacity .42s ease,
+      transform .72s var(--ease),
+      max-height .72s var(--ease),
+      padding .72s var(--ease),
+      margin .72s var(--ease),
+      border-width .4s ease;
+  }
+
+  .chapter-panel__details h4 {
+    max-width: 860px;
+    transition: font-size .72s var(--ease), max-width .72s var(--ease);
+  }
+
+  .chapter-panel__details p {
+    max-width: 900px;
+    transition: font-size .72s var(--ease), line-height .72s var(--ease), max-width .72s var(--ease);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details {
+    width: 100%;
+    max-width: none;
+    transform: translateY(-4px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4 {
+    max-width: 920px;
+    font-size: clamp(28px, 2.25vw, 38px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    max-width: 940px;
+    font-size: clamp(13px, .92vw, 14.5px);
+    line-height: 1.66;
+  }
+}
+
+/* V23 — smooth only the text reflow inside the expanding white story card.
+   Geometry and mobile/tablet behavior are unchanged. */
+@media (min-width: 861px) {
+  .chapter-panel__details {
+    contain: paint;
+    will-change: width, transform;
+  }
+
+  .chapter-panel__details h4,
+  .chapter-panel__details p,
+  .chapter-panel__details .chapter-panel__meta {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    filter: blur(0);
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+    will-change: transform, opacity, filter;
+    transition:
+      opacity .28s ease,
+      transform .44s var(--ease),
+      filter .32s ease;
+  }
+
+  /* Avoid animating typography metrics while the parent width is changing.
+     Those metric animations caused repeated line-layout recalculation and the visible hitch. */
+  .chapter-panel__details h4,
+  .chapter-panel__details p {
+    transition-property: opacity, transform, filter;
+  }
+
+  .evolution-split.is-resizing .chapter-panel__details h4,
+  .evolution-split.is-resizing .chapter-panel__details p,
+  .evolution-split.is-resizing .chapter-panel__details .chapter-panel__meta {
+    opacity: .58;
+    transform: translate3d(0, 5px, 0);
+    filter: blur(.18px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details h4,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details h4 {
+    max-width: 920px;
+    font-size: clamp(28px, 2.25vw, 38px);
+  }
+
+  .evolution-split.has-focus .chapter-panel.is-expanded .chapter-panel__details p,
+  .evolution-split:not(.has-focus):hover > .chapter-panel:hover .chapter-panel__details p {
+    max-width: 940px;
+    font-size: clamp(13px, .92vw, 14.5px);
+    line-height: 1.66;
+  }
+}

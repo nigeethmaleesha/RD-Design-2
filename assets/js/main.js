@@ -12,11 +12,9 @@
   const heroSlides = [...document.querySelectorAll('[data-hero-slide]')];
   const heroTabs = [...document.querySelectorAll('[data-hero-tab]')];
   const heroCurrent = document.querySelector('[data-hero-current]');
-  const evolution = document.querySelector('[data-evolution]');
-  const evolutionTabs = [...document.querySelectorAll('[data-evolution-tab]')];
-  const evolutionPanels = [...document.querySelectorAll('[data-evolution-panel]')];
+  const evolutionSplit = document.querySelector('[data-evolution-split]');
+  const chapterPanels = [...document.querySelectorAll('[data-chapter-panel]')];
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   requestAnimationFrame(() => {
     document.body.classList.add('is-ready');
@@ -69,78 +67,66 @@
     });
   }
 
-  /* Two-circle studio story. Flyouts appear on hover/focus; tap on touch devices. */
-  if (evolution && evolutionTabs.length && evolutionPanels.length) {
-    let activeEvolution = null;
-    const panelHideTimers = new WeakMap();
+  /* Split studio story: default 50/50; desktop/laptop pointer hover expands one chapter and compresses the other.
+     Important: do not disable this just because the device also has a touchscreen. Many Windows laptops
+     report a coarse/touch pointer even while a mouse or trackpad is being used. */
+  if (evolutionSplit && chapterPanels.length === 2) {
+    const canSplit = () => window.matchMedia('(min-width: 861px)').matches;
+    let chapterResizeTimer = null;
 
-    const setPanelHidden = (panel, hidden) => {
-      if (!panel) return;
-      const existingTimer = panelHideTimers.get(panel);
-      if (existingTimer) window.clearTimeout(existingTimer);
+    const markChapterResize = () => {
+      if (prefersReducedMotion || !canSplit()) return;
+      window.clearTimeout(chapterResizeTimer);
+      evolutionSplit.classList.add('is-resizing');
+      chapterResizeTimer = window.setTimeout(() => {
+        evolutionSplit.classList.remove('is-resizing');
+      }, 980);
+    };
 
-      if (!hidden) {
-        panel.hidden = false;
-        requestAnimationFrame(() => panel.classList.add('is-active'));
+    const setChapterFocus = (activePanel = null) => {
+      if (!canSplit() || !activePanel) {
+        markChapterResize();
+        evolutionSplit.classList.remove('has-focus');
+        chapterPanels.forEach((panel) => {
+          panel.classList.remove('is-expanded', 'is-collapsed');
+        });
         return;
       }
 
-      panel.classList.remove('is-active');
-      const timer = window.setTimeout(() => {
-        if (!panel.classList.contains('is-active')) panel.hidden = true;
-      }, 520);
-      panelHideTimers.set(panel, timer);
-    };
-
-    const activateEvolution = (key) => {
-      activeEvolution = key;
-      evolution.classList.add('has-active');
-      evolutionTabs.forEach((tab) => {
-        const selected = tab.dataset.evolutionTab === key;
-        tab.classList.toggle('is-active', selected);
-        tab.setAttribute('aria-selected', String(selected));
-      });
-
-      evolutionPanels.forEach((panel) => {
-        setPanelHidden(panel, panel.dataset.evolutionPanel !== key);
+      markChapterResize();
+      evolutionSplit.classList.add('has-focus');
+      chapterPanels.forEach((panel) => {
+        const isActive = panel === activePanel;
+        panel.classList.toggle('is-expanded', isActive);
+        panel.classList.toggle('is-collapsed', !isActive);
       });
     };
 
-    const clearEvolution = () => {
-      activeEvolution = null;
-      evolution.classList.remove('has-active');
-      evolutionTabs.forEach((tab) => {
-        tab.classList.remove('is-active');
-        tab.setAttribute('aria-selected', 'false');
+    chapterPanels.forEach((panel) => {
+      // Pointer events distinguish a real mouse/pen hover from a touch press.
+      panel.addEventListener('pointerenter', (event) => {
+        if (event.pointerType !== 'touch') setChapterFocus(panel);
       });
-      evolutionPanels.forEach((panel) => setPanelHidden(panel, true));
-    };
+      panel.addEventListener('pointerleave', (event) => {
+        if (event.pointerType !== 'touch') setChapterFocus();
+      });
 
-    evolutionTabs.forEach((tab) => {
-      const key = tab.dataset.evolutionTab;
-      const story = tab.closest('[data-evolution-story]');
+      // Mouse events are kept as a fallback for browsers/devices with incomplete pointer reporting.
+      panel.addEventListener('mouseenter', () => setChapterFocus(panel));
+      panel.addEventListener('mouseleave', () => setChapterFocus());
 
-      if (!isTouch) {
-        story?.addEventListener('mouseenter', () => activateEvolution(key));
-        story?.addEventListener('mouseleave', clearEvolution);
-        tab.addEventListener('focus', () => activateEvolution(key));
-        tab.addEventListener('blur', () => {
-          window.setTimeout(() => {
-            if (!story?.contains(document.activeElement)) clearEvolution();
-          }, 0);
-        });
-      }
-
-      tab.addEventListener('click', () => {
-        if (isTouch && activeEvolution === key) {
-          clearEvolution();
-        } else {
-          activateEvolution(key);
-        }
+      panel.addEventListener('focus', () => setChapterFocus(panel));
+      panel.addEventListener('blur', () => {
+        window.setTimeout(() => {
+          if (!evolutionSplit.contains(document.activeElement)) setChapterFocus();
+        }, 0);
       });
     });
 
-    clearEvolution();
+    // If the viewport crosses into the mobile layout, clear any desktop expansion state.
+    window.addEventListener('resize', () => {
+      if (!canSplit()) setChapterFocus();
+    });
   }
 
   const onScroll = () => {
